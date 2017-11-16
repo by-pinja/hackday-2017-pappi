@@ -1,7 +1,12 @@
 package helpers;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.media.MediaPlayer;
+import android.os.PowerManager;
 import android.util.Log;
+
+import com.frost.mqtttutorial.R;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
@@ -13,6 +18,10 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * Created by wildan on 3/19/2017.
  */
@@ -20,15 +29,37 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class MqttHelper {
     public MqttAndroidClient mqttAndroidClient;
 
-    final String serverUri = "tcp://mqtt.dioty.co:1883";
+    MediaPlayer mp;
 
-    final String clientId = "ExampleAndroidClient";
-    final String subscriptionTopic = "/roni.palva-aho@protacon.com/";
+    private String serverUri;
 
-    final String username = "roni.palva-aho@protacon.com";
-    final String password = "4f339303";
+    private String clientId;
+    private String subscriptionTopic;
 
-    public MqttHelper(Context context){
+    private String username;
+    private String password;
+
+    public MqttHelper(Context context) {
+        mp = MediaPlayer.create(context, R.raw.vuvuzela);
+
+        try {
+            InputStream rawResource = context.getResources().openRawResource(R.raw.config);
+            Properties properties = new Properties();
+            properties.load(rawResource);
+
+            serverUri = properties.getProperty("server_uri");
+            username = properties.getProperty("username");
+            password = properties.getProperty("password");
+            clientId = properties.getProperty("client_id");
+            subscriptionTopic = properties.getProperty("subscription_topic");
+
+        } catch (Resources.NotFoundException e) {
+            Log.e("MQTTHelper", "Unable to find the config file: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("MQTTHelper", "Failed to open config file.");
+        }
+
+        final Context ctx = context.getApplicationContext();
         mqttAndroidClient = new MqttAndroidClient(context, serverUri, clientId);
         mqttAndroidClient.setCallback(new MqttCallbackExtended() {
             @Override
@@ -44,6 +75,11 @@ public class MqttHelper {
             @Override
             public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
                 Log.w("Mqtt", mqttMessage.toString());
+                PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+                assert pm != null;
+                PowerManager.WakeLock wakeLock = pm.newWakeLock((PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "TAG");
+                wakeLock.acquire(60000);
+                mp.start();
             }
 
             @Override
@@ -58,19 +94,17 @@ public class MqttHelper {
         mqttAndroidClient.setCallback(callback);
     }
 
-    private void connect(){
+    private void connect() {
         MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
         mqttConnectOptions.setAutomaticReconnect(true);
         mqttConnectOptions.setCleanSession(false);
-        //mqttConnectOptions.setUserName(username);
-        //mqttConnectOptions.setPassword(password.toCharArray());
+        mqttConnectOptions.setUserName(username);
+        mqttConnectOptions.setPassword(password.toCharArray());
 
         try {
-
             mqttAndroidClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
-
                     DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
                     disconnectedBufferOptions.setBufferEnabled(true);
                     disconnectedBufferOptions.setBufferSize(100);
@@ -87,7 +121,7 @@ public class MqttHelper {
             });
 
 
-        } catch (MqttException ex){
+        } catch (MqttException ex) {
             ex.printStackTrace();
         }
     }
@@ -103,7 +137,7 @@ public class MqttHelper {
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    Log.w("Mqtt", "Subscribed fail!");
+                    Log.w("Mqtt", "Subscribe fail!");
                 }
             });
 

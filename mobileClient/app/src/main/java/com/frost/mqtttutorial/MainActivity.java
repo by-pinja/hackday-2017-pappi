@@ -7,14 +7,12 @@ import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
 
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-
 import helpers.ChartHelper;
 import helpers.MqttHelper;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "Pappi MQTT";
 
     MqttHelper mqttHelper;
     ChartHelper mChart;
@@ -35,30 +33,7 @@ public class MainActivity extends AppCompatActivity {
         startMqtt();
     }
 
-    private void startMqtt(){
+    private void startMqtt() {
         mqttHelper = new MqttHelper(getApplicationContext());
-        mqttHelper.mqttAndroidClient.setCallback(new MqttCallbackExtended() {
-            @Override
-            public void connectComplete(boolean b, String s) {
-                Log.w("Debug","Connected");
-            }
-
-            @Override
-            public void connectionLost(Throwable throwable) {
-
-            }
-
-            @Override
-            public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
-                Log.w("Debug",mqttMessage.toString());
-                dataReceived.setText(mqttMessage.toString());
-                mChart.addEntry(Float.valueOf(mqttMessage.toString()));
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
-
-            }
-        });
     }
 }
