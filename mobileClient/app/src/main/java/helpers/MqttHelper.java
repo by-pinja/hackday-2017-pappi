@@ -20,13 +20,13 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class MqttHelper {
     public MqttAndroidClient mqttAndroidClient;
 
-    final String serverUri = "tcp://broker.hivemq.com:1883";
+    final String serverUri = "tcp://mqtt.dioty.co:1883";
 
     final String clientId = "ExampleAndroidClient";
-    final String subscriptionTopic = "sensor/+";
+    final String subscriptionTopic = "/roni.palva-aho@protacon.com/";
 
-    final String username = "xxxxxxx";
-    final String password = "yyyyyyy";
+    final String username = "roni.palva-aho@protacon.com";
+    final String password = "4f339303";
 
     public MqttHelper(Context context){
         mqttAndroidClient = new MqttAndroidClient(context, serverUri, clientId);
