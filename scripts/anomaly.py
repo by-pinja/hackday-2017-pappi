@@ -18,6 +18,10 @@ def process():
 	last_error_ind = -99999
 	treshold = 50
 	
+	f = open('measured.csv', 'w')
+	f.write('temp;timestamp\n')
+	f.close()
+	
 	d = deque()
 	ind = 0
 	while True:
@@ -41,6 +45,10 @@ def process():
 			"GlobalParameters":  {
 			}
 		}
+		
+		f = open('measured.csv', 'a')
+		f.write(temp_str.replace('.', ',') + ';' + stamp + '\n')
+		f.close()
 		
 		print('Current temperature: ' + temp_str)
 		
