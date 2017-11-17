@@ -1,11 +1,17 @@
 package helpers;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.media.MediaPlayer;
 import android.os.PowerManager;
 import android.util.Log;
 
+import com.frost.mqtttutorial.MainActivity;
 import com.frost.mqtttutorial.R;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
@@ -22,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static android.content.Context.NOTIFICATION_SERVICE;
+
 /**
  * Created by wildan on 3/19/2017.
  */
@@ -30,6 +38,7 @@ public class MqttHelper {
     public MqttAndroidClient mqttAndroidClient;
 
     MediaPlayer mp;
+    Context context;
 
     private String serverUri;
 
@@ -40,7 +49,9 @@ public class MqttHelper {
     private String password;
 
     public MqttHelper(Context context) {
-        mp = MediaPlayer.create(context, R.raw.vuvuzela);
+        mp = MediaPlayer.create(context, R.raw.ipanema);
+
+        this.context = context;
 
         try {
             InputStream rawResource = context.getResources().openRawResource(R.raw.config);
@@ -64,7 +75,7 @@ public class MqttHelper {
         mqttAndroidClient.setCallback(new MqttCallbackExtended() {
             @Override
             public void connectComplete(boolean b, String s) {
-                Log.w("mqtt", s);
+                Log.w("Mqtt", s);
             }
 
             @Override
@@ -75,11 +86,35 @@ public class MqttHelper {
             @Override
             public void messageArrived(String topic, MqttMessage mqttMessage) throws Exception {
                 Log.w("Mqtt", mqttMessage.toString());
+
                 PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
                 assert pm != null;
                 PowerManager.WakeLock wakeLock = pm.newWakeLock((PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "TAG");
                 wakeLock.acquire(60000);
-                mp.start();
+
+                // prepare intent which is triggered if the
+                // notification is selected
+                Intent intent = new Intent(ctx, MainActivity.class);
+                PendingIntent pIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
+
+                // build notification
+                // the addAction re-use the same intent to keep the example short
+                Notification n  = new Notification.Builder(ctx)
+                        .setContentTitle("ANOMALY DETECTED!!!")
+                        //.setContentText("Subject")
+                        .setSmallIcon(R.drawable.ic_warning_black_24dp)
+                        .setContentIntent(pIntent)
+                        .setAutoCancel(true).build();
+                        //.addAction(R.drawable.icon, "Call", pIntent)
+                        //.addAction(R.drawable.icon, "More", pIntent)
+                        //.addAction(R.drawable.icon, "And more", pIntent).build();
+
+
+                NotificationManager notificationManager =
+                        (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+
+                notificationManager.notify(0, n);
+                startPlayer();
             }
 
             @Override
@@ -92,6 +127,22 @@ public class MqttHelper {
 
     public void setCallback(MqttCallbackExtended callback) {
         mqttAndroidClient.setCallback(callback);
+    }
+
+    public void startPlayer() {
+        try {
+            mp.prepare();
+        } catch (IOException ex) {
+            Log.d("Mttq", ex.getMessage());
+        }
+        mp.start();
+    }
+
+    public void stopPlayer() {
+        if (mp.isPlaying()) {
+            mp.stop();
+            mp.release();
+        }
     }
 
     private void connect() {
@@ -125,7 +176,6 @@ public class MqttHelper {
             ex.printStackTrace();
         }
     }
-
 
     private void subscribeToTopic() {
         try {

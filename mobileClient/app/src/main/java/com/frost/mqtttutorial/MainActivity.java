@@ -21,7 +21,6 @@ public class MainActivity extends AppCompatActivity {
     TextView dataReceived;
 
     @Override
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -31,6 +30,17 @@ public class MainActivity extends AppCompatActivity {
         mChart = new ChartHelper(chart);
 
         startMqtt();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mqttHelper.stopPlayer();
     }
 
     private void startMqtt() {
