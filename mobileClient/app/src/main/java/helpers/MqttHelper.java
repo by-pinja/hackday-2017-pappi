@@ -130,18 +130,12 @@ public class MqttHelper {
     }
 
     public void startPlayer() {
-        try {
-            mp.prepare();
-        } catch (IOException ex) {
-            Log.d("Mttq", ex.getMessage());
-        }
         mp.start();
     }
 
     public void stopPlayer() {
         if (mp.isPlaying()) {
             mp.stop();
-            mp.release();
         }
     }
 
